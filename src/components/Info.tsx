@@ -4,6 +4,7 @@ import {
   Avatar,
   Button,
   Drawer,
+  LoadingOverlay,
   useMantineColorScheme,
 } from "@mantine/core";
 import { useRef, useState } from "react";
@@ -14,6 +15,8 @@ import {
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
+import axios from "axios";
+import { UploadApiResponse } from "cloudinary";
 
 const Info = () => {
   const auth = useAuth();
@@ -21,6 +24,7 @@ const Info = () => {
   const router = useRouter();
 
   const [drOpen, setDrOpen] = useState(false);
+  const [isAvUpload, setAvUpload] = useState(false);
 
   const onDrClose = () => {
     setDrOpen(false);
@@ -46,19 +50,77 @@ const Info = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const handleImageInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setAvUpload(true);
+      const signData = (
+        await axios.post("/api/authorize_upload", {
+          folder: "avatars",
+        })
+      ).data;
+
+      const url = `https://api.cloudinary.com/v1_1/${signData.cloud_name}/auto/upload`;
+
+      const formData = new FormData();
+
+      formData.append("file", e.target.files[0]);
+      formData.append("api_key", signData.api_key);
+      formData.append("timestamp", signData.timestamp);
+      formData.append("signature", signData.signature);
+      formData.append("folder", "avatars");
+
+      const cloudinaryData = (
+        await axios.post<UploadApiResponse>(url, formData)
+      ).data;
+
+      axios
+        .patch("/api/user", {
+          userId: auth.user?.id,
+          avatar: cloudinaryData.secure_url,
+        })
+        .then((res) => {
+          auth.updateAvatar(cloudinaryData.secure_url);
+          setAvUpload(false);
+        });
+    }
+  };
+
+  const deleteAv = () => {
+    setAvUpload(true);
+    axios
+      .patch("/api/user", {
+        userId: auth.user?.id,
+        avatar: "",
+      })
+      .then((res) => {
+        auth.updateAvatar("");
+        setAvUpload(false);
+      });
+  };
+
   return (
     <div className="flex">
       <div className="relative m-3 group">
-        <Avatar className="w-36 h-36 group-hover:opacity-25" />
+        <LoadingOverlay visible={isAvUpload} overlayBlur={3} />
+        <Avatar
+          src={auth.user?.avatar}
+          className="w-36 h-36 group-hover:opacity-25"
+        />
         <div className="absolute bottom-0 group-hover:flex justify-around w-full hidden mb-1">
           <ActionIcon color="blue" onClick={() => inputRef.current?.click()}>
             <PencilSquareIcon className="w-6 h-6" />
           </ActionIcon>
-          <ActionIcon color="red">
+          <ActionIcon color="red" onClick={deleteAv}>
             <TrashIcon className="h-6 w-6" />
           </ActionIcon>
         </div>
-        <input accept="image/*" ref={inputRef} type="file" className="hidden" />
+        <input
+          accept="image/*"
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          onChange={handleImageInput}
+        />
       </div>
       <div className="flex justify-between w-full">
         <div className="text-2xl">
