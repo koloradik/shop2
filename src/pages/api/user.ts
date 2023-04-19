@@ -22,9 +22,12 @@ export default async function handler(
 
     return res.status(200).json({ user: user });
   } else if (req.method === "PATCH") {
-    const body = req.body;
+    const body = req.body as {
+      userId: string | undefined;
+      avatar: string | undefined;
+    };
 
-    if (!body.userId || !body.avatar || typeof body.avatar !== "string") {
+    if (!body.userId || !body.avatar) {
       return res.status(400).json({ message: "nepravilnie dannue" });
     }
 
