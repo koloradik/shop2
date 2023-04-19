@@ -24,7 +24,7 @@ export default async function handler(
   } else if (req.method === "PATCH") {
     const body = req.body;
 
-    if (!body.userId || typeof body.avatar !== "string") {
+    if (!body.userId || !body.avatar || typeof body.avatar !== "string") {
       return res.status(400).json({ message: "nepravilnie dannue" });
     }
 
