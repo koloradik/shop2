@@ -65,7 +65,7 @@ export default function Home(
                     }`}
                   >
                     <Card.Section>
-                      <Image src="/p.png" alt="Image" height={160} />
+                      <Image src="/goraPink.png" alt="Image" height={160} />
                     </Card.Section>
 
                     <Text className="text-xl mt-1 font-semibold">

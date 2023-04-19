@@ -104,7 +104,7 @@ const Info = () => {
         <LoadingOverlay visible={isAvUpload} overlayBlur={3} />
         <Avatar
           src={auth.user?.avatar}
-          className="w-36 h-36 group-hover:opacity-25"
+          className="w-44 h-44 group-hover:opacity-25"
         />
         <div className="absolute bottom-0 group-hover:flex justify-around w-full hidden mb-1">
           <ActionIcon color="blue" onClick={() => inputRef.current?.click()}>
