@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { Carousel } from "@mantine/carousel";
-import { Button, Image, Text, useMantineColorScheme } from "@mantine/core";
+import { Button, Image, useMantineColorScheme } from "@mantine/core";
+import useBucket from "@/store/bucket";
+import { Product } from "@prisma/client";
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   const product = await prisma.product.findUnique({
@@ -17,10 +19,23 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   };
 }
 
-export default function Product(
+export default function ProductPage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>
 ) {
   const theme = useMantineColorScheme();
+
+  const bucket = useBucket();
+
+  const buy = (product: Product) => {
+    const productInBucket = bucket.bucket.find(
+      (el) => product.id === el.product.id
+    );
+
+    if (productInBucket) {
+      bucket.setAmount(productInBucket.amount + 1, product.id);
+    } else bucket.addProduct(product);
+  };
+
   return (
     <>
       <div>
@@ -35,13 +50,13 @@ export default function Product(
           withIndicators
         >
           <Carousel.Slide>
-            <Image src="/goraBlack.png" />
+            <Image src="/goraBlack.png" alt="goraBlack" />
           </Carousel.Slide>
           <Carousel.Slide>
-            <Image src="/goraWhite.png" />
+            <Image src="/goraWhite.png" alt="goraWhite" />
           </Carousel.Slide>
           <Carousel.Slide>
-            <Image src="/goraPink.png" />
+            <Image src="/goraPink.png" alt="goraPink" />
           </Carousel.Slide>
         </Carousel>
 
@@ -68,7 +83,7 @@ export default function Product(
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                buy(props.product);
+                if (props.product) buy(props.product);
               }}
               color={`green`}
               uppercase
