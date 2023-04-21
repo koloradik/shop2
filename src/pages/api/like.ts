@@ -16,19 +16,20 @@ export default async function handler(
 
   const resp = await prisma.wishlist.create({
     data: {
-      user: {
-        connect: {
-          id: userId,
-        },
-      },
       product: {
         connect: {
           id: productId,
         },
       },
+      user: {
+        connect: {
+          id: userId,
+        },
+      },
     },
   });
+
   return res
     .status(200)
-    .json({ productId: resp.productId, userId: resp.userId, id: resp.id });
+    .json({ productId: resp.productId, userId: resp.userId });
 }

@@ -34,9 +34,10 @@ model Product{
 }
 
 model Wishlist{
-  id String @id @default(uuid())
   userId String
   user User @relation(fields: [userId],references: [id])
   productId Int
   product Product @relation(fields: [productId],references: [id])
+
+@@id([productId, userId])
 }
