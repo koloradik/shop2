@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db";
+import useAuth from "@/store/auth";
 import useBucket from "@/store/bucket";
+import { HeartIcon } from "@heroicons/react/24/outline";
 import {
+  ActionIcon,
   Alert,
   Button,
   Card,
@@ -9,6 +12,7 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { Product } from "@prisma/client";
+import axios from "axios";
 import { InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import Link from "next/link";
@@ -30,6 +34,8 @@ export default function Home(
 
   const bucket = useBucket();
 
+  const auth = useAuth();
+
   const buy = (product: Product) => {
     const productInBucket = bucket.bucket.find(
       (el) => product.id === el.product.id
@@ -38,6 +44,10 @@ export default function Home(
     if (productInBucket) {
       bucket.setAmount(productInBucket.amount + 1, product.id);
     } else bucket.addProduct(product);
+  };
+
+  const like = (productId: number) => {
+    axios.post("/api/like", { productId, userId: auth.user?.id });
   };
 
   return (
@@ -78,20 +88,34 @@ export default function Home(
                       <p className="ml-2 truncate text-lg text-blue-500">
                         {product.price}₴
                       </p>
-                      <Button
-                        variant={`${
-                          theme.colorScheme === "dark" ? `outline` : `filled`
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          buy(product);
-                        }}
-                        color={`green`}
-                        uppercase
-                      >
-                        buy
-                      </Button>
+
+                      <div className="flex space-x-1 items-center">
+                        <ActionIcon
+                          variant="light"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            like(product.id);
+                          }}
+                          className="bg-transparent"
+                        >
+                          <HeartIcon className="w-7 h-7 text-red-600 fill-red-600 " />
+                        </ActionIcon>
+                        <Button
+                          variant={`${
+                            theme.colorScheme === "dark" ? `outline` : `filled`
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            buy(product);
+                          }}
+                          color={`green`}
+                          uppercase
+                        >
+                          buy
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 </Link>

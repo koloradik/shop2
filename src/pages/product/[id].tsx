@@ -1,9 +1,17 @@
 import { prisma } from "@/lib/db";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import { Carousel } from "@mantine/carousel";
-import { Button, Image, useMantineColorScheme } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  Image,
+  useMantineColorScheme,
+} from "@mantine/core";
 import useBucket from "@/store/bucket";
 import { Product } from "@prisma/client";
+import { HeartIcon } from "@heroicons/react/24/outline";
+import axios from "axios";
+import useAuth from "@/store/auth";
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   const product = await prisma.product.findUnique({
@@ -26,6 +34,8 @@ export default function ProductPage(
 
   const bucket = useBucket();
 
+  const auth = useAuth();
+
   const buy = (product: Product) => {
     const productInBucket = bucket.bucket.find(
       (el) => product.id === el.product.id
@@ -36,29 +46,35 @@ export default function ProductPage(
     } else bucket.addProduct(product);
   };
 
+  const like = (productId: number) => {
+    axios.post("/api/like", { productId, userId: auth.user?.id });
+  };
+
   return (
     <>
       <div>
         <div className="ml-4 my-3">Id этого товара: {props.product?.id}</div>
-        <Carousel
-          slideSize="70%"
-          height={300}
-          slideGap="xl"
-          controlsOffset="xs"
-          controlSize={20}
-          loop
-          withIndicators
-        >
-          <Carousel.Slide>
-            <Image src="/goraBlack.png" alt="goraBlack" />
-          </Carousel.Slide>
-          <Carousel.Slide>
-            <Image src="/goraWhite.png" alt="goraWhite" />
-          </Carousel.Slide>
-          <Carousel.Slide>
-            <Image src="/goraPink.png" alt="goraPink" />
-          </Carousel.Slide>
-        </Carousel>
+        <div className="flex justify-center md:mx-[25%]">
+          <Carousel
+            slideSize="70%"
+            height={300}
+            slideGap="xl"
+            controlsOffset="xs"
+            controlSize={20}
+            loop
+            withIndicators
+          >
+            <Carousel.Slide>
+              <Image src="/goraBlack.png" alt="goraBlack" />
+            </Carousel.Slide>
+            <Carousel.Slide>
+              <Image src="/goraGrayLite.png" alt="goraWhite" />
+            </Carousel.Slide>
+            <Carousel.Slide>
+              <Image src="/goraPink.png" alt="goraPink" />
+            </Carousel.Slide>
+          </Carousel>
+        </div>
 
         <div className="flex m-6 justify-between items-center">
           <div className="text-5xl font-semibold">{props.product?.model}</div>
@@ -77,19 +93,34 @@ export default function ProductPage(
             >
               {props.product?.price}₴
             </div>
-            <Button
-              className="w-32 h-12"
-              variant={`${theme.colorScheme === "dark" ? `outline` : `filled`}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                if (props.product) buy(props.product);
-              }}
-              color={`green`}
-              uppercase
-            >
-              buy
-            </Button>
+            <div className="flex items-center">
+              <ActionIcon
+                variant="light"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (props.product) like(props.product.id);
+                }}
+                className="bg-transparent w-9 h-9 mx-3"
+              >
+                <HeartIcon className="w-10 h-10 text-red-600 fill-red-600 " />
+              </ActionIcon>
+              <Button
+                className="w-32 h-12"
+                variant={`${
+                  theme.colorScheme === "dark" ? `outline` : `filled`
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (props.product) buy(props.product);
+                }}
+                color={`green`}
+                uppercase
+              >
+                buy
+              </Button>
+            </div>
           </div>
         </div>
       </div>
