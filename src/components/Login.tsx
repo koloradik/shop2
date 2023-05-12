@@ -1,11 +1,5 @@
-import useAuth from "@/store/auth";
-import {
-  Button,
-  LoadingOverlay,
-  PasswordInput,
-  TextInput,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { Button, LoadingOverlay, TextInput } from "@mantine/core";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 
 type LoginProps = {
@@ -14,30 +8,16 @@ type LoginProps = {
 
 const Login = (props: LoginProps) => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const auth = useAuth();
-
-  const [visible, { toggle }] = useDisclosure(false);
 
   const [isLoading, setLoading] = useState(false);
 
-  const login = () => {
+  const login = async () => {
     setLoading(true);
 
-    fetch(`/api/login`, {
-      method: "POST",
-      body: JSON.stringify({ email: email, password: password }),
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.user) {
-          auth.login(res.user);
-          props.closeModal();
+    await signIn("email", { email, redirect: false });
 
-          setLoading(false);
-        }
-      });
+    props.closeModal();
+    setLoading(false);
   };
 
   return (
@@ -51,15 +31,7 @@ const Login = (props: LoginProps) => {
         data-autofocus
         autoFocus
       />
-      <PasswordInput
-        withAsterisk
-        label="Пароль"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        visible={visible}
-        onVisibilityChange={toggle}
-      />
-      <Button disabled={!email || !password} onClick={login}>
+      <Button disabled={!email} onClick={login}>
         Bойти
       </Button>
     </div>

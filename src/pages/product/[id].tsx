@@ -4,19 +4,28 @@ import { Carousel } from "@mantine/carousel";
 import {
   ActionIcon,
   Button,
+  Divider,
   Image,
+  Rating,
+  Textarea,
   useMantineColorScheme,
 } from "@mantine/core";
 import useBucket from "@/store/bucket";
 import { Product } from "@prisma/client";
 import { HeartIcon } from "@heroicons/react/24/outline";
+import { useWishlist } from "@/hooks/queries/useWishlist";
+import useAddToWishlist from "@/hooks/mutations/useAddToWishlist";
+import useRemoveFromWishlist from "@/hooks/mutations/useRemoveFromWishlist";
+import { useState } from "react";
 import axios from "axios";
-import useAuth from "@/store/auth";
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   const product = await prisma.product.findUnique({
     where: {
       id: Number(ctx.params?.id),
+    },
+    include: {
+      comments: true,
     },
   });
 
@@ -30,11 +39,19 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
 export default function ProductPage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>
 ) {
+  const [text, setText] = useState("");
+  const [rating, setRating] = useState(0);
+
   const theme = useMantineColorScheme();
 
   const bucket = useBucket();
 
-  const auth = useAuth();
+  const { data: wishlist, isLoading: isWishlistLoading } = useWishlist();
+
+  const { mutate: addMutate, isLoading: isAddLoading } = useAddToWishlist();
+
+  const { mutate: deleteMutate, isLoading: isRemoveLoading } =
+    useRemoveFromWishlist();
 
   const buy = (product: Product) => {
     const productInBucket = bucket.bucket.find(
@@ -47,17 +64,32 @@ export default function ProductPage(
   };
 
   const like = (productId: number) => {
-    axios.post("/api/like", { productId, userId: auth.user?.id });
+    const hasNot = wishlist.products.some(
+      (product: any) => product.id === productId
+    );
+
+    if (hasNot) {
+      deleteMutate(productId);
+    } else {
+      addMutate(productId);
+    }
+  };
+
+  const publishComment = () => {
+    axios.post("/api/comment", {
+      text,
+      rating,
+      productId: props.product?.id,
+    });
   };
 
   return (
     <>
       <div>
         <div className="ml-4 my-3">Id этого товара: {props.product?.id}</div>
-        <div className="flex justify-center md:mx-[25%]">
+        <div className="flex items-center max-w-3xl:">
           <Carousel
             slideSize="70%"
-            height={300}
             slideGap="xl"
             controlsOffset="xs"
             controlSize={20}
@@ -77,7 +109,7 @@ export default function ProductPage(
         </div>
 
         <div className="flex m-6 justify-between items-center">
-          <div className="text-5xl font-semibold">{props.product?.model}</div>
+          <div className="text-5xl font-semibold">{props.product?.name}</div>
 
           <div
             className={`border space-y-4 ${
@@ -94,17 +126,36 @@ export default function ProductPage(
               {props.product?.price}₴
             </div>
             <div className="flex items-center">
-              <ActionIcon
-                variant="light"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  if (props.product) like(props.product.id);
-                }}
-                className="bg-transparent w-9 h-9 mx-3"
-              >
-                <HeartIcon className="w-10 h-10 text-red-600 fill-red-600 " />
-              </ActionIcon>
+              {wishlist &&
+              wishlist.products.some(
+                (product: any) => product.id === product.id
+              ) ? (
+                <ActionIcon
+                  loading={isAddLoading || isRemoveLoading || isWishlistLoading}
+                  variant="light"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (props.product) like(props.product.id);
+                  }}
+                  className="bg-transparent w-9 h-9 mx-3"
+                >
+                  <HeartIcon className="w-10 h-10 text-red-600 fill-red-600 " />
+                </ActionIcon>
+              ) : (
+                <ActionIcon
+                  loading={isAddLoading || isRemoveLoading || isWishlistLoading}
+                  variant="light"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (props.product) like(props.product.id);
+                  }}
+                  className="bg-transparent w-9 h-9 mx-3"
+                >
+                  <HeartIcon className="w-10 h-10 text-red-600" />
+                </ActionIcon>
+              )}
               <Button
                 className="w-32 h-12"
                 variant={`${
@@ -123,6 +174,28 @@ export default function ProductPage(
             </div>
           </div>
         </div>
+      </div>
+
+      <Divider />
+
+      <p>Отзывы:</p>
+      <div>
+        <Rating fractions={2} onChange={(rValue) => setRating(rValue)} />
+        <Textarea
+          placeholder="Оставьте комментарий!"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <Button onClick={publishComment}>Опубликовать комментарий</Button>
+      </div>
+      <div>
+        {props.product?.comments.map((c) => {
+          return (
+            <div key={c.id}>
+              <p>{c.text}</p>
+            </div>
+          );
+        })}
       </div>
     </>
   );

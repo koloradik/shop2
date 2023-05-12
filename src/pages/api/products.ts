@@ -1,22 +1,26 @@
 import { prisma } from "@/lib/db";
 import { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const session = await getServerSession(req, res, authOptions);
+
+  if (!session || !session.user) {
+    return res.status(400).json({
+      message: "ne ykazan userId",
+    });
+  }
+
   if (req.method === "GET") {
-    const userId = req.query.userId;
-
-    if (!userId) {
-      return res.status(400).json({
-        message: "ne ykazan userId",
-      });
-    }
-
     const products = await prisma.product.findMany({
       where: {
-        userId: userId as string,
+        user: {
+          email: session.user.email as string,
+        },
       },
     });
 
@@ -26,23 +30,15 @@ export default async function handler(
   }
 
   if (req.method === "POST") {
-    const userId = req.query.userId;
-
-    if (!userId) {
-      return res.status(400).json({
-        message: "ne ykazan user Id",
-      });
-    }
-
     const body = JSON.parse(req.body);
 
     const product = await prisma.product.create({
       data: {
-        model: body.model,
-        manufacturer: body.manuf,
+        name: body.name,
+        developer: body.developer,
         price: Number(body.price),
         description: body.desc,
-        userId: userId as string,
+        user: { connect: { email: session.user.email as string } },
       },
     });
 
@@ -79,8 +75,8 @@ export default async function handler(
         id: Number(body.id),
       },
       data: {
-        model: body.model,
-        manufacturer: body.manuf,
+        name: body.name,
+        developer: body.developer,
         price: Number(body.price),
         description: body.desc,
       },

@@ -5,8 +5,9 @@ type User = {
   id: string;
   name: string;
   email: string;
-  status: string;
+  role: string;
   avatar: string;
+  wishlist: number[];
 };
 
 type AuthStore = {
@@ -17,6 +18,9 @@ type AuthStore = {
   login: (user: User) => void;
 
   updateAvatar: (avatar: string) => void;
+
+  addProductToWishlist: (productId: number) => void;
+  removeProductFromWishlist: (productId: number) => void;
 };
 
 const useAuth = create<AuthStore>()(
@@ -32,6 +36,33 @@ const useAuth = create<AuthStore>()(
         set((state) => ({
           user: state.user ? { ...state.user, avatar } : state.user,
         })),
+
+      addProductToWishlist: (productId) =>
+        set((state) => {
+          if (state.user) {
+            return {
+              user: {
+                ...state.user,
+                wishlist: [...state.user.wishlist, productId],
+              },
+            };
+          }
+          return state;
+        }),
+
+      removeProductFromWishlist: (productId) =>
+        set((state) => {
+          if (state.user) {
+            return {
+              user: {
+                ...state.user,
+                wishlist: state.user.wishlist.filter((el) => el !== productId),
+              },
+            };
+          }
+
+          return state;
+        }),
     }),
     { name: "auth" }
   )

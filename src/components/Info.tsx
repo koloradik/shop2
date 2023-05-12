@@ -1,4 +1,3 @@
-import useAuth from "@/store/auth";
 import {
   ActionIcon,
   Avatar,
@@ -17,11 +16,16 @@ import {
 import { useRouter } from "next/router";
 import axios from "axios";
 import { UploadApiResponse } from "cloudinary";
+import { signOut, useSession } from "next-auth/react";
+import useUser from "@/hooks/queries/useUser";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Info = () => {
-  const auth = useAuth();
+  const session = useSession();
 
   const router = useRouter();
+
+  const { data: user } = useUser();
 
   const [drOpen, setDrOpen] = useState(false);
   const [isAvUpload, setAvUpload] = useState(false);
@@ -32,20 +36,20 @@ const Info = () => {
 
   const theme = useMantineColorScheme();
 
+  const queryClient = useQueryClient();
+
   const logout = () => {
-    auth.logout();
+    signOut();
     setDrOpen(false);
     router.push("/");
   };
 
   const deleteAcc = () => {
-    fetch(`/api/user?userId=${auth.user?.id}`, {
+    fetch(`/api/user`, {
       method: "DELETE",
     })
       .then((res) => res.json())
-      .then((res) => {
-        logout();
-      });
+      .then(() => logout());
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,12 +79,16 @@ const Info = () => {
 
       axios
         .patch("/api/user", {
-          userId: auth.user?.id,
-          avatar: cloudinaryData.secure_url,
+          image: cloudinaryData.secure_url,
+          name: user.user.name,
+          role: user.user.role,
+          balance: user.user.balance,
+          rating: user.user.rating,
+          id: user.user.id,
         })
         .then((res) => {
-          auth.updateAvatar(cloudinaryData.secure_url);
           setAvUpload(false);
+          queryClient.refetchQueries(["user"]);
         });
     }
   };
@@ -89,12 +97,16 @@ const Info = () => {
     setAvUpload(true);
     axios
       .patch("/api/user", {
-        userId: auth.user?.id,
-        avatar: "",
+        image: "",
+        name: user.user.name,
+        role: user.user.role,
+        balance: user.user.balance,
+        rating: user.user.rating,
+        id: user.user.id,
       })
       .then((res) => {
-        auth.updateAvatar("");
         setAvUpload(false);
+        queryClient.refetchQueries(["user"]);
       });
   };
 
@@ -103,7 +115,7 @@ const Info = () => {
       <div className="relative m-3 group">
         <LoadingOverlay visible={isAvUpload} overlayBlur={3} />
         <Avatar
-          src={auth.user?.avatar}
+          src={user?.user?.image}
           className="w-44 h-44 group-hover:opacity-25"
         />
         <div className="absolute bottom-0 group-hover:flex justify-around w-full hidden mb-1">
@@ -124,8 +136,8 @@ const Info = () => {
       </div>
       <div className="flex justify-between w-full">
         <div className="text-2xl">
-          <p>Email: {auth.user?.email}</p>
-          <p>Имя: {auth.user?.name}</p>
+          <p>Email: {user?.user?.email}</p>
+          <p>Имя: {user?.user?.name}</p>
         </div>
         <div>
           <Button

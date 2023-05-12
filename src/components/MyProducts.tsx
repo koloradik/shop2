@@ -1,4 +1,3 @@
-import useAuth from "@/store/auth";
 import {
   Alert,
   Button,
@@ -14,15 +13,13 @@ import { Product } from "@prisma/client";
 import { useEffect, useState } from "react";
 
 const MyProducts = () => {
-  const auth = useAuth();
-
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
 
   const [id, setId] = useState("");
-  const [manuf, setManuf] = useState("");
-  const [model, setModel] = useState("");
+  const [developer, setDeveloper] = useState("");
+  const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [price, setPrice] = useState("");
 
@@ -30,15 +27,15 @@ const MyProducts = () => {
   const [isEdLoading, setEdLoading] = useState(false);
   const [deletingPr, setDeletingPr] = useState<number[]>([]);
 
-  const changeManuf = (
+  const changeDeveloper = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setManuf(e.target.value);
+    setDeveloper(e.target.value);
   };
   const changeModel = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setModel(e.target.value);
+    setName(e.target.value);
   };
   const changeDesc = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -52,12 +49,12 @@ const MyProducts = () => {
   };
 
   useEffect(() => {
-    fetch(`/api/products?userId=${auth.user?.id}`)
+    fetch(`/api/products`)
       .then((res) => res.json())
       .then((res) => {
         setProducts(res.products);
       });
-  }, [auth]);
+  }, []);
 
   const onCreateClose = () => {
     setOpenCreate(false);
@@ -67,8 +64,8 @@ const MyProducts = () => {
   };
 
   const clear = () => {
-    setManuf("");
-    setModel("");
+    setDeveloper("");
+    setName("");
     setDesc("");
     setPrice("");
   };
@@ -76,11 +73,11 @@ const MyProducts = () => {
   const createProduct = () => {
     setCrLoading(true);
 
-    fetch(`/api/products?userId=${auth.user?.id}`, {
+    fetch(`/api/products`, {
       method: "POST",
       body: JSON.stringify({
-        manuf,
-        model,
+        developer,
+        name,
         desc,
         price,
       }),
@@ -118,8 +115,8 @@ const MyProducts = () => {
     fetch(`/api/products`, {
       method: "PATCH",
       body: JSON.stringify({
-        manuf,
-        model,
+        developer,
+        name,
         desc,
         price,
         id,
@@ -163,13 +160,13 @@ const MyProducts = () => {
         <TextInput
           className="mt-2"
           label="Разработчик:"
-          value={manuf}
-          onChange={(e) => changeManuf(e)}
+          value={developer}
+          onChange={(e) => changeDeveloper(e)}
           withAsterisk
         />
         <TextInput
           label="Название:"
-          value={model}
+          value={name}
           onChange={(e) => changeModel(e)}
           withAsterisk
         />
@@ -212,12 +209,12 @@ const MyProducts = () => {
         <TextInput
           className="mt-2"
           label="Производитель"
-          value={manuf}
-          onChange={(e) => changeManuf(e)}
+          value={developer}
+          onChange={(e) => changeDeveloper(e)}
         />
         <TextInput
           label="Модель"
-          value={model}
+          value={name}
           onChange={(e) => changeModel(e)}
         />
         <TextInput
@@ -267,7 +264,7 @@ const MyProducts = () => {
                 </Card.Section>
 
                 <Text>
-                  {product.manufacturer} {product.model}
+                  {product.developer} {product.name}
                 </Text>
                 <Text>{product.description}</Text>
                 <div className="flex justify-between items-center">
@@ -280,9 +277,9 @@ const MyProducts = () => {
                       size="small"
                       onClick={() => {
                         setOpenEdit(true);
-                        setManuf(product.manufacturer);
+                        setDeveloper(product.developer);
                         setDesc(product.description);
-                        setModel(product.model);
+                        setName(product.name);
                         setId(String(product.id));
                         setPrice(String(product.price));
                       }}

@@ -1,5 +1,7 @@
+import useAddToWishlist from "@/hooks/mutations/useAddToWishlist";
+import useRemoveFromWishlist from "@/hooks/mutations/useRemoveFromWishlist";
+import { useWishlist } from "@/hooks/queries/useWishlist";
 import { prisma } from "@/lib/db";
-import useAuth from "@/store/auth";
 import useBucket from "@/store/bucket";
 import { HeartIcon } from "@heroicons/react/24/outline";
 import {
@@ -12,10 +14,10 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { Product } from "@prisma/client";
-import axios from "axios";
 import { InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import Link from "next/link";
+import { useState } from "react";
 
 export async function getServerSideProps() {
   const products = await prisma.product.findMany();
@@ -30,11 +32,19 @@ export async function getServerSideProps() {
 export default function Home(
   props: InferGetServerSidePropsType<typeof getServerSideProps>
 ) {
+  const { data: wishlist } = useWishlist();
+
+  const { mutate: addMutate } = useAddToWishlist();
+
+  const { mutate: deleteMutate } = useRemoveFromWishlist();
+
   const theme = useMantineColorScheme();
 
   const bucket = useBucket();
 
-  const auth = useAuth();
+  const [wishlistProductsLoading, setWishlistProductsLoading] = useState<
+    number[]
+  >([]);
 
   const buy = (product: Product) => {
     const productInBucket = bucket.bucket.find(
@@ -47,7 +57,17 @@ export default function Home(
   };
 
   const like = (productId: number) => {
-    axios.post("/api/like", { productId, userId: auth.user?.id });
+    const hasNot = wishlist.products.some(
+      (product: any) => product.id === productId
+    );
+
+    if (hasNot) {
+      // setWishlistProductsLoading((prev) => [...prev, productId]);
+      deleteMutate(productId);
+    } else {
+      // setWishlistProductsLoading((prev) => [...prev, productId]);
+      addMutate(productId);
+    }
   };
 
   return (
@@ -79,10 +99,10 @@ export default function Home(
                     </Card.Section>
 
                     <Text className="text-xl mt-1 font-semibold">
-                      {product.model}
+                      {product.name}
                     </Text>
                     <Text className="text-sm m-1 text-slate-500">
-                      от {product.manufacturer}
+                      от {product.developer}
                     </Text>
                     <div className="flex justify-between items-center">
                       <p className="ml-2 truncate text-lg text-blue-500">
@@ -90,17 +110,41 @@ export default function Home(
                       </p>
 
                       <div className="flex space-x-1 items-center">
-                        <ActionIcon
-                          variant="light"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            like(product.id);
-                          }}
-                          className="bg-transparent"
-                        >
-                          <HeartIcon className="w-7 h-7 text-red-600 fill-red-600 " />
-                        </ActionIcon>
+                        {wishlist &&
+                        wishlist.products.some(
+                          (product: any) => product.id === product.id
+                        ) ? (
+                          <ActionIcon
+                            loading={wishlistProductsLoading.includes(
+                              product.id
+                            )}
+                            variant="light"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              like(product.id);
+                            }}
+                            className="bg-transparent"
+                          >
+                            <HeartIcon className="w-7 h-7 text-red-600 fill-red-600 " />
+                          </ActionIcon>
+                        ) : (
+                          <ActionIcon
+                            loading={wishlistProductsLoading.includes(
+                              product.id
+                            )}
+                            variant="light"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              like(product.id);
+                            }}
+                            className="bg-transparent"
+                          >
+                            <HeartIcon className="w-7 h-7 text-red-600" />
+                          </ActionIcon>
+                        )}
+
                         <Button
                           variant={`${
                             theme.colorScheme === "dark" ? `outline` : `filled`

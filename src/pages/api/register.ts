@@ -26,8 +26,12 @@ export default async function handler(
       password: body.password,
     },
   });
+
   return res.status(200).json({
-    user: user,
+    user: {
+      ...user,
+      wishlish: [],
+    },
     message: "Аккаунт успешно создан",
   });
 }

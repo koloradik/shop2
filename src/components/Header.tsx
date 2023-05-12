@@ -1,10 +1,11 @@
-import useAuth from "@/store/auth";
 import {
+  Accordion,
   ActionIcon,
   Alert,
   Button,
   Divider,
   Drawer,
+  Input,
   Modal,
   NumberInput,
   Text,
@@ -27,9 +28,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { useDisclosure } from "@mantine/hooks";
 import useBucket from "@/store/bucket";
+import { useSession } from "next-auth/react";
+import Balance from "./modals/Balance";
 
 const Header = () => {
-  const auth = useAuth();
+  const [showOformZakaz, setShowOformZakaz] = useState(false);
+
+  const session = useSession();
 
   const theme = useMantineColorScheme();
 
@@ -45,6 +50,7 @@ const Header = () => {
   for (const el of bucket.bucket) {
     totalA = totalA + el.product.price * el.amount;
   }
+
   return (
     <div
       className={`flex w-full py-3 border-black sticky top-0 z-50 space-x-2 rounded-lg ${
@@ -69,38 +75,90 @@ const Header = () => {
         placeholder="Поиск"
         icon={<MagnifyingGlassIcon className="h-5 w-5" />}
       />
-      <div className="flex justify-center items-center space-x-3 w-1/2 sm:w-1/6">
-        {theme.colorScheme === "dark" ? (
-          <ActionIcon
-            onClick={() => theme.toggleColorScheme()}
-            variant="outline"
-          >
-            <SunIcon className="w-7 h-7" />
-          </ActionIcon>
-        ) : (
-          <ActionIcon
-            onClick={() => theme.toggleColorScheme()}
-            variant="outline"
-          >
-            <MoonIcon className="w-7 h-7" />
-          </ActionIcon>
-        )}
 
-        {auth.isAuth ? (
-          <Link href="/profile">
-            <ActionIcon variant="outline">
-              <UserIcon className="w-7 h-7" />
+      <div className="flex justify-around items-center w-1/2 sm:w-1/6">
+        <Balance />
+
+        <div className="flex space-x-3 ">
+          {theme.colorScheme === "dark" ? (
+            <ActionIcon
+              onClick={() => theme.toggleColorScheme()}
+              variant="transparent"
+              style={{
+                border: "1px solid white",
+              }}
+            >
+              <SunIcon className="w-7 h-7 text-white" />
             </ActionIcon>
-          </Link>
-        ) : (
-          <ActionIcon variant="outline" onClick={() => setOpen(true)}>
-            <ArrowLeftOnRectangleIcon className="w-7 h-7" />
-          </ActionIcon>
-        )}
+          ) : (
+            <ActionIcon
+              onClick={() => theme.toggleColorScheme()}
+              variant="transparent"
+              style={{
+                border: "1px solid black",
+              }}
+            >
+              <MoonIcon className="w-7 h-7 text-black" />
+            </ActionIcon>
+          )}
 
-        <ActionIcon variant="outline" onClick={openB}>
-          <ShoppingCartIcon className="w-7 h-7" />
-        </ActionIcon>
+          {session.status === "authenticated" ? (
+            <Link href="/profile">
+              <ActionIcon
+                variant="transparent"
+                style={{
+                  border:
+                    theme.colorScheme === "dark"
+                      ? "1px solid white"
+                      : "1px solid black",
+                }}
+              >
+                <UserIcon
+                  className="w-7 h-7"
+                  style={{
+                    color: theme.colorScheme === "dark" ? "white" : "black",
+                  }}
+                />
+              </ActionIcon>
+            </Link>
+          ) : (
+            <ActionIcon
+              variant="transparent"
+              style={{
+                border:
+                  theme.colorScheme === "dark"
+                    ? "1px solid white"
+                    : "1px solid black",
+              }}
+              onClick={() => setOpen(true)}
+            >
+              <ArrowLeftOnRectangleIcon
+                className="w-7 h-7"
+                style={{
+                  color: theme.colorScheme === "dark" ? "white" : "black",
+                }}
+              />
+            </ActionIcon>
+          )}
+
+          <ActionIcon
+            variant="transparent"
+            style={{
+              border:
+                theme.colorScheme === "dark"
+                  ? "1px solid white"
+                  : "1px solid black",
+            }}
+            onClick={openB}
+          >
+            <ShoppingCartIcon
+              className="w-7 h-7"
+              style={{
+                color: theme.colorScheme === "dark" ? "white" : "black",
+              }}
+            />
+          </ActionIcon>
+        </div>
       </div>
       <Modal
         opened={open}
@@ -158,9 +216,7 @@ const Header = () => {
                 <>
                   <Divider my="xs" />
                   <div key={el.product.id} className="flex items-center w-full">
-                    <Text className="w-1/4 text-center">
-                      {el.product.model}
-                    </Text>
+                    <Text className="w-1/4 text-center">{el.product.name}</Text>
                     <Text className="w-1/4 text-center">
                       {el.product.price * el.amount}₴
                     </Text>
@@ -204,6 +260,10 @@ const Header = () => {
                 sx={{ fontFamily: "Greycliff CF, sans-serif" }}
                 fz="xl"
                 fw={700}
+                onClick={() => {
+                  setShowOformZakaz(true);
+                  closeB();
+                }}
               >
                 Оформить заказ
               </Button>
@@ -215,6 +275,79 @@ const Header = () => {
           </Alert>
         )}
       </Drawer>
+
+      <Modal
+        size={"auto"}
+        opened={showOformZakaz}
+        onClose={() => {
+          setShowOformZakaz(false);
+        }}
+        centered
+        title="Оформлени заказа:"
+      >
+        <div className="flex justify-between items-center py-24 flex-wrap gap-10">
+          <div className="space-y-3 ml-4">
+            <Input.Wrapper withAsterisk label="Имя:">
+              <Input className="w-64" id="input-demo" />
+            </Input.Wrapper>
+            <Input.Wrapper withAsterisk label="Фамилия:">
+              <Input className="w-64" id="input-demo" />
+            </Input.Wrapper>
+          </div>
+          <div
+            className="mr-4 w-72 h-64 rounded-xl space-y-4"
+            style={{
+              border:
+                theme.colorScheme === "dark"
+                  ? `1px solid white`
+                  : `1px solid black`,
+            }}
+          >
+            <div className="flex justify-around text-lg">
+              <p>Товары:</p>
+              <p className="text-blue-600">{totalA}₴</p>
+            </div>
+
+            <div className="flex justify-around text-lg">
+              <p>Комисия:</p>
+              <p className="text-orange-500">3%</p>
+            </div>
+
+            <div>
+              <Accordion
+                variant="contained"
+                radius="md"
+                defaultValue="customization"
+                className="mx-9"
+              >
+                <Accordion.Item value="customization">
+                  <Accordion.Control>Скидка: </Accordion.Control>
+                  <Accordion.Panel>
+                    {bucket.bucket.map((el) => {
+                      return (
+                        <div key={el.product.id}>
+                          <div className="flex justify-between">
+                            <p>{el.product.name}</p>
+                            <p
+                              className={`${
+                                el.product.discount > 0
+                                  ? `text-green-500`
+                                  : `text-neutral-400`
+                              }`}
+                            >
+                              {el.product.discount * 100}%
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

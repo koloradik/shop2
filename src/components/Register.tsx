@@ -1,4 +1,3 @@
-import useAuth from "@/store/auth";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import {
   Alert,
@@ -8,6 +7,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import axios from "axios";
 import { useState } from "react";
 
 type RegisterProps = {
@@ -20,8 +20,6 @@ const Register = (props: RegisterProps) => {
   const [email, setEmail] = useState("");
   const [cpassword, setCpassword] = useState("");
 
-  const auth = useAuth();
-
   const [visible, { toggle }] = useDisclosure(false);
 
   const [isLoading, setLoading] = useState(false);
@@ -31,22 +29,26 @@ const Register = (props: RegisterProps) => {
   const register = () => {
     setLoading(true);
 
-    fetch(`/api/register`, {
-      method: "POST",
-      body: JSON.stringify({
+    axios
+      .post(`/api/register`, {
         name: name,
         email: email,
         password: password,
-      }),
-    })
-      .then((res) => res.json())
+      })
       .then((res) => {
-        if (res.error) {
-          setError(res.error);
+        if (res.data.error) {
+          setError(res.data.error);
 
           setLoading(false);
-        } else if (res.user) {
-          auth.login(res.user);
+        } else if (res.data.user) {
+          // auth.login({
+          //   id: res.data.user.id,
+          //   avatar: res.data.user.avatar,
+          //   email: res.data.user.email,
+          //   name: res.data.user.name,
+          //   role: res.data.user.role,
+          //   wishlist: res.data.user.wishlist,
+          // });
           props.closeModal();
 
           setLoading(false);
