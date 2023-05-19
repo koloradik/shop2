@@ -2,8 +2,10 @@ import {
   ActionIcon,
   Avatar,
   Button,
+  Divider,
   Drawer,
   LoadingOverlay,
+  TextInput,
   useMantineColorScheme,
 } from "@mantine/core";
 import { useRef, useState } from "react";
@@ -12,6 +14,7 @@ import {
   TrashIcon,
   Cog6ToothIcon,
   PencilSquareIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
 import axios from "axios";
@@ -24,6 +27,10 @@ const Info = () => {
   const session = useSession();
 
   const router = useRouter();
+
+  const [changeNameStatus, setChangeNameStatus] = useState(false);
+
+  const [name, setName] = useState("");
 
   const { data: user } = useUser();
 
@@ -110,20 +117,40 @@ const Info = () => {
       });
   };
 
+  const changeName = () => {
+    axios
+      .patch("/api/user", {
+        image: user.user.image,
+        name: name,
+        role: user.user.role,
+        balance: user.user.balance,
+        rating: user.user.rating,
+        id: user.user.id,
+      })
+      .then((res) => {
+        setAvUpload(false);
+        queryClient.refetchQueries(["user"]);
+      });
+  };
+
+  const showChangNameInput = () => {
+    setChangeNameStatus(true);
+  };
+
   return (
-    <div className="flex">
-      <div className="relative m-3 group">
+    <div className="space-y-5 flex justify-center flex-col items-center mb-96">
+      <div className="w-72 h-72 relative m-3 group">
         <LoadingOverlay visible={isAvUpload} overlayBlur={3} />
         <Avatar
           src={user?.user?.image}
-          className="w-44 h-44 group-hover:opacity-25"
+          className="w-72 h-72 group-hover:opacity-25 rounded-3xl"
         />
-        <div className="absolute bottom-0 group-hover:flex justify-around w-full hidden mb-1">
+        <div className="absolute w-72 h-72 bottom-0 group-hover:flex justify-around items-end hidden mb-1">
           <ActionIcon color="blue" onClick={() => inputRef.current?.click()}>
-            <PencilSquareIcon className="w-6 h-6" />
+            <PencilSquareIcon className="w-8 h-8" />
           </ActionIcon>
           <ActionIcon color="red" onClick={deleteAv}>
-            <TrashIcon className="h-6 w-6" />
+            <TrashIcon className="h-8 w-8" />
           </ActionIcon>
         </div>
         <input
@@ -134,29 +161,70 @@ const Info = () => {
           onChange={handleImageInput}
         />
       </div>
-      <div className="flex justify-between w-full">
+      <div className="flex justify-center w-full">
         <div className="text-2xl">
           <p>Email: {user?.user?.email}</p>
-          <p>Имя: {user?.user?.name}</p>
-        </div>
-        <div>
-          <Button
-            className="text-blue mr-3"
-            variant="moi"
-            onClick={() => setDrOpen(true)}
-          >
-            <Cog6ToothIcon className="w-6 h-6" />
-          </Button>
+          <p className="flex">
+            Имя:
+            {changeNameStatus === false ? (
+              <div className="ml-2">{user?.user?.name}</div>
+            ) : (
+              <div className="flex items-center space-x-1 ml-1">
+                <TextInput
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
+                  data-autofocus
+                  autoFocus
+                ></TextInput>
+                <ActionIcon
+                  variant="outline"
+                  className="h-8 w-8"
+                  color="blue"
+                  onClick={() => {
+                    changeName(), setChangeNameStatus(false);
+                  }}
+                >
+                  <CheckIcon className="h-8 w-8" color="sky" />
+                </ActionIcon>
+              </div>
+            )}
+          </p>
+          <p>Ваш статус: {user?.user?.role}</p>
         </div>
       </div>
+      <div className="flex justify-center w-full">
+        <Button
+          className="text-blue mr-3 "
+          variant="outline"
+          onClick={() => setDrOpen(true)}
+        >
+          <Cog6ToothIcon className="w-6 h-6" />
+          <p className="text-xl ml-2 flex">Настройки пользователя</p>
+        </Button>
+      </div>
+
       <Drawer opened={drOpen} onClose={onDrClose} title="Настройки">
         <div className={`space-y-3`}>
           <Button
             variant={`${theme.colorScheme === "dark" ? `outline` : `light`}`}
             className="w-96"
-            onClick={logout}
+            color={"cyan"}
+            onClick={() => {
+              showChangNameInput(), onDrClose();
+            }}
           >
-            <ArrowRightOnRectangleIcon className="w-5 h-5" /> Выйти
+            <PencilSquareIcon className="w-5 h-5" />
+            <p className="ml-1">Изменить никнейм</p>
+          </Button>
+          <Divider my="xs" />
+          <Button
+            variant={`${theme.colorScheme === "dark" ? `outline` : `light`}`}
+            className="w-96"
+          >
+            <ArrowRightOnRectangleIcon className="w-5 h-5" />{" "}
+            <p className="ml-1">Выйти</p>
           </Button>
           <Button
             color={"red"}
@@ -164,7 +232,8 @@ const Info = () => {
             className="w-96"
             onClick={deleteAcc}
           >
-            <TrashIcon className="w-5 h-5" /> Удалить аккаунт
+            <TrashIcon className="w-5 h-5" />{" "}
+            <p className="ml-1">Удалить аккаунт</p>
           </Button>
         </div>
       </Drawer>

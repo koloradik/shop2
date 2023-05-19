@@ -1,7 +1,17 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
-import { authOptions } from "./auth/[...nextauth]";
+import { authOptions } from "../auth/[...nextauth]";
 import { prisma } from "@/lib/db";
+import { Comment, CommentMark, User } from "@prisma/client";
+
+export type CommentWithMarks = Comment & {
+  user: User;
+  commentMarks: CommentMark[];
+};
+
+export type CommentGetResponse = {
+  comments: CommentWithMarks[];
+};
 
 export default async function handler(
   req: NextApiRequest,
@@ -42,5 +52,22 @@ export default async function handler(
     });
 
     return res.status(200).json({ comment });
+  }
+
+  if (req.method === "GET") {
+    const productId = req.query.productId;
+
+    if (!productId) {
+      return res.status(400).json({ message: "no product id" });
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: {
+        productId: Number(productId),
+      },
+      include: { commentMarks: true, user: true },
+    });
+
+    return res.status(200).json({ comments });
   }
 }

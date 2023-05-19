@@ -2,11 +2,11 @@
 generator client {
   provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 
 model User {
   id       String    @id @default(uuid())
@@ -16,7 +16,7 @@ model User {
   password String?
   image    String    @default("")
   balance  Float     @default(0)
-  role     String    @default("User")
+  role     String    @default("New user")  
   rating   Int       @default(0)
   products Product[]
   comments Comment[]
@@ -25,7 +25,9 @@ model User {
 
    accounts      Account[]
    sessions      Session[]
+   commentMarks  CommentMark[]  
 }
+
 
 model Product {
   id          Int    @id @default(autoincrement())
@@ -41,6 +43,7 @@ model Product {
   comments Comment[]
 }
 
+
 model Wishlist {
   userId String
   user   User   @relation(fields: [userId], references: [id])
@@ -51,17 +54,35 @@ model Wishlist {
   @@id([userId, productId])
 }
 
+
+
+//comment
 model Comment {
-  id       String    @id @default(uuid())
-  rating   Int       
-  text     String
+  id          String    @id @default(uuid())
+  rating      Float       
+  text        String
 
   userId      String
   user        User   @relation(fields: [userId], references: [id])
 
-  productId Int
-  product   Product @relation(fields: [productId], references: [id])
+  productId   Int
+  product     Product @relation(fields: [productId], references: [id])
+
+  commentMarks CommentMark[]  
 }
+
+model CommentMark{
+  mark        Boolean
+
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
+
+  commentId   String
+  comment     Comment   @relation(fields: [commentId], references: [id])
+
+  @@id([userId, commentId])
+}
+
 
 
 //  next-auth models

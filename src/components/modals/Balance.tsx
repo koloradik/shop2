@@ -146,22 +146,30 @@ const Balance = () => {
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
-          <div className="flex justify-between items-center mt-5">
-            <div className="flex space-x-5 items-center">
-              <Text
-                variant="gradient"
-                gradient={{ from: "#15aabf", to: "#5f3dc4", deg: -0.3 }}
-                sx={{ fontFamily: "Greycliff CF, sans-serif" }}
-                fz="xl"
-                fw={700}
+          <div className="mt-28">
+            <p className="text-orange-500">Учтите, что комиссия 1%</p>
+            <div className="flex flex-col sm:flex-row  justify-between items-center mt-5">
+              <div className="flex mb-5 sm:m-0 sm:space-x-5 items-center">
+                <Text
+                  variant="gradient"
+                  gradient={{ from: "#15aabf", to: "#5f3dc4", deg: -0.3 }}
+                  sx={{ fontFamily: "Greycliff CF, sans-serif" }}
+                  fz="xl"
+                  fw={700}
+                >
+                  Сумма: {Number(value) + sum}₴
+                </Text>
+                <Button onClick={resetPopoln} className="ml-3">
+                  Сброс
+                </Button>
+              </div>
+              <Button
+                disabled={Number(value) + sum === 0}
+                onClick={handleTopup}
               >
-                Сумма пополнение: {Number(value) + sum}₴
-              </Text>
-              <Button onClick={resetPopoln}>Сброс</Button>
+                Пополнить
+              </Button>
             </div>
-            <Button disabled={Number(value) + sum === 0} onClick={handleTopup}>
-              Пополнить
-            </Button>
           </div>
         </div>
       </Modal>

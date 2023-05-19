@@ -6,28 +6,38 @@ import {
   Button,
   Divider,
   Image,
+  Modal,
   Rating,
   Textarea,
   useMantineColorScheme,
 } from "@mantine/core";
 import useBucket from "@/store/bucket";
 import { Product } from "@prisma/client";
-import { HeartIcon } from "@heroicons/react/24/outline";
+import {
+  HandThumbDownIcon,
+  HandThumbUpIcon,
+  HeartIcon,
+} from "@heroicons/react/24/outline";
 import { useWishlist } from "@/hooks/queries/useWishlist";
 import useAddToWishlist from "@/hooks/mutations/useAddToWishlist";
 import useRemoveFromWishlist from "@/hooks/mutations/useRemoveFromWishlist";
 import { useState } from "react";
 import axios from "axios";
+import { useDisclosure } from "@mantine/hooks";
+import ProductCommmnts from "@/components/ProductComments";
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   const product = await prisma.product.findUnique({
     where: {
       id: Number(ctx.params?.id),
     },
-    include: {
-      comments: true,
-    },
   });
+
+  if (!product) {
+    return {
+      notFound: true,
+    };
+  }
 
   return {
     props: {
@@ -39,9 +49,6 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
 export default function ProductPage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>
 ) {
-  const [text, setText] = useState("");
-  const [rating, setRating] = useState(0);
-
   const theme = useMantineColorScheme();
 
   const bucket = useBucket();
@@ -75,18 +82,10 @@ export default function ProductPage(
     }
   };
 
-  const publishComment = () => {
-    axios.post("/api/comment", {
-      text,
-      rating,
-      productId: props.product?.id,
-    });
-  };
-
   return (
     <>
       <div>
-        <div className="ml-4 my-3">Id этого товара: {props.product?.id}</div>
+        <div className="ml-4 my-3">Id этого товара: {props.product.id}</div>
         <div className="flex items-center max-w-3xl:">
           <Carousel
             slideSize="70%"
@@ -109,7 +108,7 @@ export default function ProductPage(
         </div>
 
         <div className="flex m-6 justify-between items-center">
-          <div className="text-5xl font-semibold">{props.product?.name}</div>
+          <div className="text-5xl font-semibold">{props.product.name}</div>
 
           <div
             className={`border space-y-4 ${
@@ -123,7 +122,7 @@ export default function ProductPage(
                   : `text-yellow-600`
               }`}
             >
-              {props.product?.price}₴
+              {props.product.price}₴
             </div>
             <div className="flex items-center">
               {wishlist &&
@@ -136,7 +135,7 @@ export default function ProductPage(
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    if (props.product) like(props.product.id);
+                    like(props.product.id);
                   }}
                   className="bg-transparent w-9 h-9 mx-3"
                 >
@@ -149,7 +148,7 @@ export default function ProductPage(
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    if (props.product) like(props.product.id);
+                    like(props.product.id);
                   }}
                   className="bg-transparent w-9 h-9 mx-3"
                 >
@@ -164,7 +163,7 @@ export default function ProductPage(
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  if (props.product) buy(props.product);
+                  buy(props.product);
                 }}
                 color={`green`}
                 uppercase
@@ -178,25 +177,7 @@ export default function ProductPage(
 
       <Divider />
 
-      <p>Отзывы:</p>
-      <div>
-        <Rating fractions={2} onChange={(rValue) => setRating(rValue)} />
-        <Textarea
-          placeholder="Оставьте комментарий!"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <Button onClick={publishComment}>Опубликовать комментарий</Button>
-      </div>
-      <div>
-        {props.product?.comments.map((c) => {
-          return (
-            <div key={c.id}>
-              <p>{c.text}</p>
-            </div>
-          );
-        })}
-      </div>
+      <ProductCommmnts productId={props.product.id} />
     </>
   );
 }
