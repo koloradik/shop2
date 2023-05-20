@@ -20,6 +20,15 @@ const Login = (props: LoginProps) => {
     setLoading(false);
   };
 
+  const googleLogin = async () => {
+    setLoading(true);
+
+    await signIn("google");
+
+    props.closeModal();
+    setLoading(false);
+  };
+
   return (
     <div className="flex flex-col space-y-4 justify-center m-3">
       <LoadingOverlay visible={isLoading} overlayBlur={3} />
@@ -34,6 +43,8 @@ const Login = (props: LoginProps) => {
       <Button disabled={!email} onClick={login}>
         Bойти
       </Button>
+
+      <Button onClick={googleLogin}>войти через Google</Button>
     </div>
   );
 };
